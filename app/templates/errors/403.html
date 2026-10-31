@@ -1,0 +1,3 @@
+{% extends "base.html" %}
+{% block title %}Access denied — BlogSphere{% endblock %}
+{% block content %}<section class="empty-state error-state"><div class="empty-icon">403</div><h1>This space is private.</h1><p>You don't have permission to view this page.</p><a class="btn btn-dark rounded-pill" href="{{ url_for('blog.index') }}">Return home</a></section>{% endblock %}

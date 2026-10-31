@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Revision history — {{ post.title }}{% endblock %}
+{% block content %}
+<section class="container dashboard-shell">
+  <div class="dashboard-title">
+    <div><span class="eyebrow">CONTENT HISTORY</span><h1>Revisions for {{ post.title }}</h1><p>Each entry preserves the article text before an edit or restore.</p></div>
+    <a class="btn btn-quiet" href="{{ url_for('blog.edit', slug=post.slug) }}">Back to editor</a>
+  </div>
+  <div class="activity-panel">
+    {% for revision in post.revisions %}
+    <article class="activity-item">
+      <div class="activity-copy">
+        <div><strong>{{ revision.title }}</strong></div>
+        <time>{{ revision.created_at.strftime("%b %d, %Y · %I:%M %p") }}{% if revision.editor %} · edited by {{ revision.editor.username }}{% endif %}</time>
+        {% if revision.excerpt %}<p>{{ revision.excerpt }}</p>{% endif %}
+        <details><summary>Preview saved content</summary><div class="article-content">{{ revision.content|safe }}</div></details>
+        <form class="mt-3" method="post" action="{{ url_for('blog.restore_revision', slug=post.slug, revision_id=revision.id) }}" data-confirm="Restore this revision? The current content will first be saved as a revision.">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-outline-dark">Restore this revision</button>
+        </form>
+      </div>
+    </article>
+    {% else %}<p class="muted-copy">No revisions yet. A snapshot is saved when you change an article's title, summary, or content.</p>{% endfor %}
+  </div>
+</section>
+{% endblock %}

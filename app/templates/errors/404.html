@@ -1,0 +1,3 @@
+{% extends "base.html" %}
+{% block title %}Page not found — BlogSphere{% endblock %}
+{% block content %}<section class="empty-state error-state"><div class="empty-icon">404</div><h1>This page wandered off.</h1><p>The story you're looking for may have moved or been unpublished.</p><a class="btn btn-dark rounded-pill" href="{{ url_for('blog.index') }}">Back to the stories</a></section>{% endblock %}

@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Your dashboard — BlogSphere{% endblock %}
+{% block content %}
+<section class="container dashboard-shell">
+  <div class="dashboard-title"><div><span class="eyebrow">YOUR CREATOR SPACE</span><h1>Welcome back, {{ current_user.username }}.</h1><p>Keep your ideas moving. Your next story is only a draft away.</p></div><a class="btn btn-dark rounded-pill px-4 py-2" href="{{ url_for('blog.create') }}">＋ Write a story</a></div>
+  <div class="row g-3 stats-row"><div class="col-md-3"><div class="stat-card"><span>Published stories</span><strong>{{ published_count }}</strong><small>Out in the world</small></div></div><div class="col-md-3"><div class="stat-card"><span>Drafts</span><strong>{{ draft_count }}</strong><small>Ideas in progress</small></div></div><div class="col-md-3"><div class="stat-card"><span>Comments received</span><strong>{{ comment_count }}</strong><small>Reader conversations</small></div></div><div class="col-md-3"><div class="stat-card"><span>Daily unique views</span><strong>{{ total_views }}</strong><small>Anonymous daily counts</small></div></div></div>
+  <div class="section-heading mt-5"><div><span class="eyebrow">READER ACTIVITY</span><h2>Recent conversations</h2></div></div>
+  <div class="activity-panel">
+    {% for comment in recent_comments %}
+      <article class="activity-item">{% if comment.author.profile_image %}<img class="avatar avatar-photo" src="{{ url_for('static', filename='uploads/' ~ comment.author.profile_image) }}" alt="{{ comment.author.username }} profile picture">{% else %}<span class="avatar">{{ comment.author.username[0]|upper }}</span>{% endif %}<div class="activity-copy"><div><a href="{{ url_for('auth.profile', username=comment.author.username) }}">{{ comment.author.username }}</a> commented on <a href="{{ url_for('blog.detail', slug=comment.post.slug) }}">{{ comment.post.title }}</a></div><p>{{ comment.content|truncate(180) }}</p><time>{{ comment.created_at.strftime("%b %d, %Y · %I:%M %p") }}</time></div></article>
+    {% else %}
+      <div class="activity-empty"><span class="empty-icon">✳</span><p>When readers comment on your published stories, their conversations will appear here.</p></div>
+    {% endfor %}
+  </div>
+  <div class="section-heading mt-5"><div><span class="eyebrow">YOUR LIBRARY</span><h2>Manage your stories</h2></div><a class="btn btn-outline-dark" href="{{ url_for('blog.bookmarks') }}">Reading list</a></div>
+  <div class="table-responsive dashboard-table"><table class="table align-middle"><thead><tr><th>Title</th><th>Status</th><th>Updated</th><th>Comments</th><th>Unique views</th><th class="text-end">Actions</th></tr></thead><tbody>
+  {% for post in posts %}<tr><td><strong>{{ post.title }}</strong>{% if post.category %}<small>{{ post.category.name }}</small>{% endif %}</td><td><span class="status-badge {{ post.status }}">{{ post.status }}</span></td><td>{{ post.updated_at.strftime("%b %d, %Y") }}</td><td>{{ post.comments|length }}</td><td>{{ view_counts.get(post.id, 0) }}</td><td class="text-end"><div class="d-inline-flex gap-2">{% if post.is_published %}<a class="btn btn-sm btn-outline-dark" href="{{ url_for('blog.detail', slug=post.slug) }}">View</a>{% endif %}<a class="btn btn-sm btn-outline-dark" href="{{ url_for('blog.edit', slug=post.slug) }}">Edit</a><form method="post" action="{{ url_for('blog.delete', slug=post.slug) }}" data-confirm="Delete this story permanently?"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-outline-danger">Delete</button></form></div></td></tr>
+  {% else %}<tr><td colspan="6"><div class="empty-state compact"><h3>Your writing journey starts here</h3><p>Create a first story and share it with the community.</p><a class="btn btn-dark rounded-pill" href="{{ url_for('blog.create') }}">Write your first story</a></div></td></tr>{% endfor %}
+  </tbody></table></div>
+</section>
+{% endblock %}

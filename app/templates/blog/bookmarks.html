@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Reading list — BlogSphere{% endblock %}
+{% block content %}
+<section class="container dashboard-shell">
+  <div class="dashboard-title"><div><span class="eyebrow">YOUR LIBRARY</span><h1>Reading list</h1><p>Stories you have saved for later.</p></div></div>
+  <div class="row g-4">
+    {% for post in posts %}
+    <div class="col-md-6 col-lg-4"><article class="story-card"><div class="story-card-body"><div class="story-meta"><span>{{ post.category.name if post.category else "Journal" }}</span><span>·</span><span>{{ post.reading_time_minutes }} min read</span></div><h3><a href="{{ url_for('blog.detail', slug=post.slug) }}">{{ post.title }}</a></h3><p>{{ post.excerpt }}</p><a class="author-line" href="{{ url_for('blog.detail', slug=post.slug) }}">Read story <span class="read-time">{{ post.author.username }}</span></a></div></article></div>
+    {% else %}<div class="col-12"><div class="empty-state"><h3>Your reading list is empty</h3><p>Save a published story and it will appear here.</p><a class="btn btn-dark rounded-pill" href="{{ url_for('blog.articles') }}">Explore stories</a></div></div>{% endfor %}
+  </div>
+</section>
+{% endblock %}

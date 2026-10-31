@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}{{ profile_user.username }} — BlogSphere{% endblock %}
+{% block content %}
+<section class="container profile-shell">
+  <header class="profile-header">
+    {% if profile_user.profile_image %}
+      <img class="avatar avatar-xl avatar-photo" src="{{ url_for('static', filename='uploads/' ~ profile_user.profile_image) }}" alt="{{ profile_user.username }} profile picture">
+    {% else %}
+      <span class="avatar avatar-xl">{{ profile_user.username[0]|upper }}</span>
+    {% endif %}
+    <div>
+      <span class="eyebrow">WRITER PROFILE</span>
+      <h1>{{ profile_user.username }}</h1>
+      <p>{{ profile_user.bio or "A curious mind sharing stories with the world." }}</p>
+      <small>Writing on BlogSphere since {{ profile_user.created_at.strftime("%B %Y") }}</small>
+    </div>
+  </header>
+  {% if form %}<details class="profile-edit"><summary>Edit your profile</summary><form method="post" enctype="multipart/form-data" class="row g-3 mt-2">{{ form.hidden_tag() }}<div class="col-md-4">{{ form.username.label(class="form-label") }}{{ form.username(class="form-control") }}{% for error in form.username.errors %}<div class="field-error">{{ error }}</div>{% endfor %}</div><div class="col-md-4">{{ form.profile_image.label(class="form-label") }}{{ form.profile_image(class="form-control") }}{% for error in form.profile_image.errors %}<div class="field-error">{{ error }}</div>{% endfor %}</div><div class="col-md-4">{{ form.bio.label(class="form-label") }}{{ form.bio(class="form-control") }}{% for error in form.bio.errors %}<div class="field-error">{{ error }}</div>{% endfor %}</div><div class="col-12">{{ form.submit(class="btn btn-dark rounded-pill") }}</div></form></details>{% endif %}
+  <div class="section-heading mt-5"><div><span class="eyebrow">PUBLISHED WORK</span><h2>Stories by {{ profile_user.username }}</h2></div></div>
+  <div class="row g-4">{% for post in posts %}<div class="col-md-6 col-lg-4"><article class="story-card"><a class="story-image" href="{{ url_for('blog.detail', slug=post.slug) }}">{% if post.featured_image %}<img src="{{ url_for('static', filename='uploads/' ~ post.featured_image) }}" alt="Featured image for {{ post.title }}">{% else %}<div class="image-placeholder placeholder-2"><b>✳</b></div>{% endif %}</a><div class="story-card-body"><div class="story-meta"><span>{{ post.created_at.strftime("%b %d, %Y") }}</span><span>•</span><span>{{ post.reading_time_minutes }} min read</span></div><h3><a href="{{ url_for('blog.detail', slug=post.slug) }}">{{ post.title }}</a></h3><p>{{ post.excerpt or post.content|striptags|truncate(120) }}</p></div></article></div>{% else %}<p class="muted-copy">No published stories yet.</p>{% endfor %}</div>
+</section>
+{% endblock %}

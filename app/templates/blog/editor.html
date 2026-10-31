@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}{{ heading }} — BlogSphere{% endblock %}
+{% block head %}<link href="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.snow.css" rel="stylesheet">{% endblock %}
+{% block content %}
+<section class="container editor-shell">
+  <div class="editor-heading"><span class="eyebrow">YOUR NEXT BIG IDEA</span><h1>{{ heading }}</h1><p>Take your time. Every good story starts somewhere.</p></div>
+  <form method="post" enctype="multipart/form-data" class="editor-form" data-inline-image-url="{{ url_for('blog.upload_inline_image') }}" data-csrf-token="{{ csrf_token() }}">
+    {{ form.hidden_tag() }}
+    <div class="mb-4">{{ form.title.label(class="form-label") }}{{ form.title(class="form-control form-control-lg", placeholder="Give your story a title") }}{% for error in form.title.errors %}<div class="field-error">{{ error }}</div>{% endfor %}</div>
+    <div class="mb-4">{{ form.excerpt.label(class="form-label") }}{{ form.excerpt(class="form-control", rows="2", placeholder="A short introduction (optional)") }}{% for error in form.excerpt.errors %}<div class="field-error">{{ error }}</div>{% endfor %}</div>
+    <div class="mb-4"><label class="form-label" for="rich-editor">Article content</label><div id="editor-toolbar"><span class="ql-formats"><select class="ql-header"><option selected></option><option value="2"></option><option value="3"></option></select><button class="ql-bold"></button><button class="ql-italic"></button><button class="ql-underline"></button></span><span class="ql-formats"><button class="ql-list" value="ordered"></button><button class="ql-list" value="bullet"></button><button class="ql-blockquote"></button><button class="ql-link"></button><button class="ql-image"></button><button class="ql-code-block"></button></span></div><div id="rich-editor"></div><input id="inline-image-input" type="file" accept="image/png,image/jpeg,image/gif,image/webp" class="visually-hidden"><div id="image-upload-status" class="form-text" role="status" aria-live="polite"></div>{{ form.content(class="d-none", id="content-source") }}{% for error in form.content.errors %}<div class="field-error">{{ error }}</div>{% endfor %}</div>
+    <div class="row g-3">
+      <div class="col-md-6">{{ form.category_id.label(class="form-label") }}{{ form.category_id(class="form-select") }}{% for error in form.category_id.errors %}<div class="field-error">{{ error }}</div>{% endfor %}</div>
+      <div class="col-md-6">{{ form.tag_ids.label(class="form-label") }}{{ form.tag_ids(class="form-select", size="3") }}{% for error in form.tag_ids.errors %}<div class="field-error">{{ error }}</div>{% endfor %}<div class="form-text">Use Ctrl / Cmd to select more than one.</div></div>
+      <div class="col-md-7">{{ form.featured_image.label(class="form-label") }}{{ form.featured_image(class="form-control", accept="image/png,image/jpeg,image/gif,image/webp") }}{% for error in form.featured_image.errors %}<div class="field-error">{{ error }}</div>{% endfor %}{% if post and post.featured_image %}<div class="form-text">A featured image is already set; leave empty to keep it.</div>{% endif %}</div>
+      <div class="col-md-5">{{ form.status.label(class="form-label") }}{{ form.status(class="form-select") }}</div>
+      <div class="col-md-6">{{ form.scheduled_local.label(class="form-label") }}{{ form.scheduled_local(class="form-control", type="datetime-local") }}{% for error in form.scheduled_local.errors %}<div class="field-error">{{ error }}</div>{% endfor %}<div class="form-text">Required only when scheduling; times use the timezone below.</div></div>
+      <div class="col-md-6">{{ form.schedule_timezone.label(class="form-label") }}{{ form.schedule_timezone(class="form-control", placeholder="Europe/London") }}{% for error in form.schedule_timezone.errors %}<div class="field-error">{{ error }}</div>{% endfor %}<div class="form-text">Use an IANA timezone, for example Europe/London or America/New_York.</div></div>
+    </div>
+    <div class="d-flex justify-content-between align-items-center mt-4"><div><a class="btn btn-quiet" href="{{ url_for('dashboard.index') }}">Cancel</a>{% if post %}<a class="btn btn-quiet" href="{{ url_for('blog.revisions', slug=post.slug) }}">Revision history</a>{% endif %}</div>{{ form.submit(class="btn btn-dark rounded-pill px-4 py-2") }}</div>
+  </form>
+</section>
+{% endblock %}
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.js"></script>
+<script>
+  window.initializeEditor({{ (form.content.data or '')|tojson }}, {{ url_for('blog.upload_inline_image')|tojson }}, {{ csrf_token()|tojson }});
+</script>
+{% endblock %}

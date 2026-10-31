@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% block title %}{{ post.title }} — BlogSphere{% endblock %}
+{% block meta_description %}{{ (post.excerpt or post.title)|striptags|truncate(160, True) }}{% endblock %}
+{% block canonical %}{% if post.is_published %}<link rel="canonical" href="{{ url_for('blog.detail', slug=post.slug, _external=True) }}">{% endif %}{% endblock %}
+{% block head %}
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="{{ post.title }}">
+  <meta property="og:description" content="{{ (post.excerpt or post.title)|striptags|truncate(160, True) }}">
+  {% if post.is_published %}
+  <script type="application/ld+json">{{ {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "headline": post.title,
+    "description": post.excerpt or post.title,
+    "datePublished": post.created_at.isoformat(),
+    "dateModified": post.updated_at.isoformat(),
+    "author": {"@type": "Person", "name": post.author.username},
+    "mainEntityOfPage": url_for("blog.detail", slug=post.slug, _external=True)
+  }|tojson }}</script>
+  {% endif %}
+{% endblock %}
+{% macro render_comment(comment, depth=0) %}
+  <div class="comment-item" id="comment-{{ comment.id }}" style="margin-left: {{ depth * 20 }}px">
+    {% if comment.author.profile_image %}<img class="avatar avatar-photo" src="{{ url_for('static', filename='uploads/' ~ comment.author.profile_image) }}" alt="{{ comment.author.username }} profile picture">{% else %}<span class="avatar">{{ comment.author.username[0]|upper }}</span>{% endif %}
+    <div class="comment-body">
+      <div class="comment-meta"><a href="{{ url_for('auth.profile', username=comment.author.username) }}">{{ comment.author.username }}</a><time>{{ comment.created_at.strftime("%b %d, %Y") }}</time></div>
+      <p>{{ comment.content }}</p>
+      {% if current_user.is_authenticated and depth < 2 %}
+      <details class="comment-action">
+        <summary>Reply</summary>
+        <form action="{{ url_for('comments.reply', comment_id=comment.id) }}" method="post">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <label class="visually-hidden" for="reply-{{ comment.id }}">Your reply</label>
+          <textarea class="form-control" id="reply-{{ comment.id }}" name="content" rows="2" minlength="2" maxlength="2000" required></textarea>
+          <button class="btn btn-sm btn-dark mt-2">Post reply</button>
+        </form>
+      </details>
+      {% endif %}
+    </div>
+    {% if current_user.is_authenticated and (current_user.is_admin or current_user.id == comment.user_id) %}
+    <form action="{{ url_for('comments.delete', comment_id=comment.id) }}" method="post" data-confirm="Remove this comment and its replies?"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-link text-danger">Remove</button></form>
+    {% elif current_user.is_authenticated %}
+    <details class="comment-action">
+      <summary>Report</summary>
+      <form action="{{ url_for('comments.report', comment_id=comment.id) }}" method="post">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <label class="visually-hidden" for="report-{{ comment.id }}">Reason for report</label>
+        <textarea class="form-control" id="report-{{ comment.id }}" name="reason" rows="2" minlength="5" maxlength="500" required></textarea>
+        <button class="btn btn-sm btn-outline-danger mt-2">Send report</button>
+      </form>
+    </details>
+    {% endif %}
+  </div>
+  {% for reply in comment.replies %}{{ render_comment(reply, depth + 1) }}{% endfor %}
+{% endmacro %}
+{% block content %}
+<article class="article-shell">
+  <div class="article-topline"><a href="{{ url_for('blog.articles') }}">Stories</a><span>/</span><span>{{ post.category.name if post.category else "Journal" }}</span>{% if post.status == "scheduled" %}<span class="status-badge scheduled">Scheduled</span>{% endif %}</div>
+  <header class="article-header">
+    {% if post.category %}<a class="category-pill" href="{{ url_for('blog.category', slug=post.category.slug) }}">{{ post.category.name }}</a>{% endif %}
+    <h1>{{ post.title }}</h1>
+    {% if post.excerpt %}<p class="article-deck">{{ post.excerpt }}</p>{% endif %}
+    <div class="article-byline">{% if post.author.profile_image %}<img class="avatar avatar-large avatar-photo" src="{{ url_for('static', filename='uploads/' ~ post.author.profile_image) }}" alt="{{ post.author.username }} profile picture">{% else %}<span class="avatar avatar-large">{{ post.author.username[0]|upper }}</span>{% endif %}<div><a href="{{ url_for('auth.profile', username=post.author.username) }}">{{ post.author.username }}</a><span>{{ post.created_at.strftime("%B %d, %Y") }} · {{ post.reading_time_minutes }} min read</span></div>{% if current_user.is_authenticated and (current_user.is_admin or current_user.id == post.author_id) %}<a class="btn btn-outline-dark btn-sm ms-auto" href="{{ url_for('blog.edit', slug=post.slug) }}">Edit story</a>{% endif %}</div>
+  </header>
+  {% if post.featured_image %}<img class="article-cover" src="{{ url_for('static', filename='uploads/' ~ post.featured_image) }}" alt="Featured image for {{ post.title }}">{% endif %}
+  <div class="article-content">{{ post.content|safe }}</div>
+  {% if post.tags %}<div class="article-tags">{% for tag in post.tags %}<a href="{{ url_for('blog.tag', slug=tag.slug) }}"># {{ tag.name }}</a>{% endfor %}</div>{% endif %}
+  {% if post.is_published %}
+  <div class="engagement-actions">
+    {% if current_user.is_authenticated %}
+    <form action="{{ url_for('blog.toggle_like', slug=post.slug) }}" method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-outline-dark">{{ "Unlike" if liked else "Like" }} · {{ post.likes|length }}</button></form>
+    <form action="{{ url_for('blog.toggle_bookmark', slug=post.slug) }}" method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-outline-dark">{{ "Remove from reading list" if bookmarked else "Save to reading list" }}</button></form>
+    {% else %}<span>{{ post.likes|length }} likes</span><a href="{{ url_for('auth.login', next=request.path) }}">Log in to like or save this story</a>{% endif %}
+  </div>
+  {% endif %}
+  {% if current_user.is_authenticated and (current_user.is_admin or current_user.id == post.author_id) %}
+  <div class="article-owner-actions">
+    <a class="btn btn-sm btn-outline-dark" href="{{ url_for('blog.revisions', slug=post.slug) }}">Revision history ({{ post.revisions|length }})</a>
+    <form class="delete-inline" action="{{ url_for('blog.delete', slug=post.slug) }}" method="post" data-confirm="Delete this story permanently?">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-link text-danger px-0">Delete this story</button>
+    </form>
+  </div>
+  {% endif %}
+  <section class="comments-section" id="comments">
+    <div class="section-heading"><div><span class="eyebrow">COMMUNITY</span><h2>Conversation <span class="comment-count">{{ post.comments|length }}</span></h2></div></div>
+    {% if current_user.is_authenticated %}
+    <form method="post" class="comment-form">
+      {{ form.hidden_tag() }}{{ form.content(class="form-control", rows="3", placeholder="Share a thoughtful response…", aria_label="Your comment") }}
+      {% for error in form.content.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+      <div class="text-end mt-2">{{ form.submit(class="btn btn-dark rounded-pill px-4") }}</div>
+    </form>
+    {% else %}<p class="signin-note"><a href="{{ url_for('auth.login', next=request.path) }}">Log in</a> to join the conversation.</p>{% endif %}
+    <div class="comment-list">
+      {% for comment in post.comments if not comment.parent_id %}{{ render_comment(comment) }}{% else %}<p class="muted-copy">No comments yet. Start the conversation.</p>{% endfor %}
+    </div>
+  </section>
+</article>
+{% endblock %}

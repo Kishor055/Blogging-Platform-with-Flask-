@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}Explore stories — BlogSphere{% endblock %}
+{% block content %}
+<section class="hero-section">
+  <div class="container hero-grid">
+    <div>
+      <span class="eyebrow"><span class="eyebrow-dot"></span> A home for thoughtful writing</span>
+      <h1>Ideas are better<br>when <em>shared.</em></h1>
+      <p class="hero-copy">Discover fresh perspectives, practical insight, and stories that stay with you.</p>
+      <a class="btn btn-dark rounded-pill px-4 py-2" href="{{ url_for('blog.articles') }}">Explore all stories <span aria-hidden="true">→</span></a>
+    </div>
+    <div class="hero-art" aria-hidden="true">
+      <div class="hero-orbit orbit-one"></div><div class="hero-orbit orbit-two"></div>
+      <div class="hero-note"><span>THE DAILY READ</span><strong>Good stories<br>open new doors.</strong><i>Read. Reflect. Repeat.</i></div>
+      <span class="hero-spark spark-one">✳</span><span class="hero-spark spark-two">✦</span>
+    </div>
+  </div>
+</section>
+
+<section class="container section-block" id="stories">
+  <div class="section-heading">
+    <div><span class="eyebrow">THE COMMUNITY</span><h2>{% if category %}{{ category.name }}{% elif tag %}Stories tagged “{{ tag.name }}”{% elif search %}Search results{% else %}Latest stories{% endif %}</h2></div>
+    <span class="muted-copy">{{ pagination.total }} {{ "story" if pagination.total == 1 else "stories" }}</span>
+  </div>
+  <form class="filter-panel row g-2 align-items-end mb-4" action="{{ url_for('blog.articles') }}" method="get">
+    <div class="col-md-5"><label class="form-label" for="filter-q">Search</label><input id="filter-q" class="form-control" name="q" value="{{ search }}" placeholder="Title or article text"></div>
+    <div class="col-md-3"><label class="form-label" for="filter-category">Category</label><select class="form-select" id="filter-category" name="category"><option value="">All categories</option>{% for item in categories %}<option value="{{ item.id }}" {% if selected_category == item.id %}selected{% endif %}>{{ item.name }}</option>{% endfor %}</select></div>
+    <div class="col-md-2"><label class="form-label" for="filter-tag">Tag</label><select class="form-select" id="filter-tag" name="tag"><option value="">All tags</option>{% for item in tags %}<option value="{{ item.id }}" {% if selected_tag == item.id %}selected{% endif %}>{{ item.name }}</option>{% endfor %}</select></div>
+    <div class="col-md-2"><label class="form-label" for="filter-sort">Sort</label><select class="form-select" id="filter-sort" name="sort"><option value="newest" {% if sort != "oldest" %}selected{% endif %}>Newest</option><option value="oldest" {% if sort == "oldest" %}selected{% endif %}>Oldest</option></select></div>
+    <div class="col-12"><button class="btn btn-dark rounded-pill px-4" type="submit">Apply filters</button>{% if search or selected_category or selected_tag %}<a class="btn btn-quiet" href="{{ url_for('blog.articles') }}">Clear</a>{% endif %}</div>
+  </form>
+  {% if pagination.items %}
+  <div class="row g-4">
+    {% for post in pagination.items %}
+    <div class="col-md-6 col-lg-4">
+      <article class="story-card">
+        <a class="story-image" href="{{ url_for('blog.detail', slug=post.slug) }}">
+          {% if post.featured_image %}<img src="{{ url_for('static', filename='uploads/' ~ post.featured_image) }}" alt="Featured image for {{ post.title }}">
+          {% else %}<div class="image-placeholder placeholder-{{ loop.index % 4 }}"><span>{{ post.category.name if post.category else "FIELD NOTES" }}</span><b>{{ ["✳", "◒", "✦", "◌"][loop.index0 % 4] }}</b></div>{% endif %}
+        </a>
+        <div class="story-card-body">
+          <div class="story-meta"><span>{{ post.category.name if post.category else "Journal" }}</span><span>·</span><time>{{ post.created_at.strftime("%b %d, %Y") }}</time></div>
+          <h3><a href="{{ url_for('blog.detail', slug=post.slug) }}">{{ post.title }}</a></h3>
+          <p>{{ post.excerpt or post.content|striptags|truncate(145) }}</p>
+          <a class="author-line" href="{{ url_for('auth.profile', username=post.author.username) }}">{% if post.author.profile_image %}<img class="avatar avatar-photo" src="{{ url_for('static', filename='uploads/' ~ post.author.profile_image) }}" alt="{{ post.author.username }} profile picture">{% else %}<span class="avatar">{{ post.author.username[0]|upper }}</span>{% endif %}<span>{{ post.author.username }}</span><span class="read-time">{{ post.reading_time_minutes }} min read</span></a>
+        </div>
+      </article>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-state"><div class="empty-icon">✎</div><h3>No stories found yet</h3><p>Try adjusting your search, or be the first to publish something.</p>{% if current_user.is_authenticated %}<a class="btn btn-dark rounded-pill" href="{{ url_for('blog.create') }}">Write a story</a>{% endif %}</div>
+  {% endif %}
+  {% if pagination.pages > 1 %}
+  <nav class="pagination-wrap" aria-label="Story pages">
+    {% if pagination.has_prev %}{% if category %}<a class="page-link-custom" href="{{ url_for('blog.category', slug=category.slug, page=pagination.prev_num, q=search, sort=sort) }}">← Previous</a>{% elif tag %}<a class="page-link-custom" href="{{ url_for('blog.tag', slug=tag.slug, page=pagination.prev_num, q=search, sort=sort) }}">← Previous</a>{% else %}<a class="page-link-custom" href="{{ url_for('blog.articles', page=pagination.prev_num, q=search, category=selected_category, tag=selected_tag, sort=sort) }}">← Previous</a>{% endif %}{% endif %}
+    <span>Page {{ pagination.page }} of {{ pagination.pages }}</span>
+    {% if pagination.has_next %}{% if category %}<a class="page-link-custom" href="{{ url_for('blog.category', slug=category.slug, page=pagination.next_num, q=search, sort=sort) }}">Next →</a>{% elif tag %}<a class="page-link-custom" href="{{ url_for('blog.tag', slug=tag.slug, page=pagination.next_num, q=search, sort=sort) }}">Next →</a>{% else %}<a class="page-link-custom" href="{{ url_for('blog.articles', page=pagination.next_num, q=search, category=selected_category, tag=selected_tag, sort=sort) }}">Next →</a>{% endif %}{% endif %}
+  </nav>
+  {% endif %}
+</section>
+{% endblock %}

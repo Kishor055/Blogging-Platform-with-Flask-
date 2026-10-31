@@ -1,0 +1,38 @@
+services:
+  web:
+    build: .
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      APP_ENV: production
+      DATABASE_URL: postgresql+psycopg://blogsphere:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@db:5432/blogsphere
+      UPLOAD_FOLDER: /app/app/static/uploads
+    volumes:
+      - uploads:/app/app/static/uploads
+      - instance:/app/instance
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: blogsphere
+      POSTGRES_USER: blogsphere
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U blogsphere -d blogsphere"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  uploads:
+  instance:
