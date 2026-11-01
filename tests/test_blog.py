@@ -28,6 +28,13 @@ def test_author_can_create_and_view_published_article(author, app):
         assert post.status == "published"
 
 
+def test_article_editor_keeps_content_field_available_without_javascript(author):
+    response = author.get("/article/new")
+    assert response.status_code == 200
+    assert b'<textarea class="form-control" id="content-source"' in response.data
+    assert b'<div id="rich-editor" hidden></div>' in response.data
+
+
 def test_author_can_edit_and_delete_own_article(author, app):
     _create_post(author)
     with app.app_context():

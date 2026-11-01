@@ -1,6 +1,10 @@
 # BlogSphere
 
-A modular Flask blogging platform for publishing articles, building a writer profile, and discovering stories by topic, tag, or search.
+> A full-featured, self-hostable blogging platform built with Flask.
+
+BlogSphere gives writers a polished space to publish and manage articles, connect with readers, and discover stories by topic, tag, or search. It is built as a modular Flask application and can run locally with SQLite or in production with PostgreSQL and Docker Compose.
+
+**Stack:** Python 3.10+ · Flask 3 · SQLAlchemy · Alembic · SQLite/PostgreSQL · pytest · Docker
 
 ## What it includes
 
@@ -19,11 +23,26 @@ A modular Flask blogging platform for publishing articles, building a writer pro
 - Rich-text sanitization, CSRF protection, secure session-cookie settings, and a production `SECRET_KEY` requirement.
 - Pytest suite, Gunicorn entry point, Dockerfile, and PostgreSQL Compose configuration.
 
+## Contents
+
+- [Requirements](#requirements)
+- [Local setup](#local-setup)
+- [Administrator account](#administrator-account)
+- [Environment variables](#environment-variables)
+- [Features and routes](#features-and-routes)
+- [Database design](#database-design)
+- [Rich text and uploads](#rich-text-and-uploads)
+- [Tests](#tests)
+- [Docker and production](#docker-and-production)
+- [Project layout](#project-layout)
+- [Accessibility and external assets](#accessibility-and-external-assets)
+- [License](#license)
+
 ## Requirements
 
 - Python 3.10 or newer (the Docker image uses Python 3.13).
 - pip and a virtual-environment tool.
-- Docker and Docker Compose for the container setup.
+- Docker Compose v2 for the container setup.
 
 ## Local setup
 
@@ -34,19 +53,22 @@ python -m pip install -r requirements.txt
 Copy-Item .env.example .env
 ```
 
-Set `SECRET_KEY` in `.env` to a unique random value before using the app beyond local development. Generate one with `python -c "import secrets; print(secrets.token_hex(32))"`. The development app generates an ephemeral key if none is set; sessions will not survive a restart until a stable value is configured.
-
-The default database is SQLite under `instance/blogsphere.db`. Initialize migrations and apply them:
+Set `SECRET_KEY` in `.env` to a unique random value before using the app beyond local development. Generate one with:
 
 ```powershell
-$env:FLASK_APP = "run.py"
-flask db init       # only once, if migrations/ does not exist
-flask db migrate -m "Initial schema"
-flask db upgrade
-flask run
+python -c "import secrets; print(secrets.token_hex(32))"
 ```
 
-The repository includes its initial migration. On a fresh checkout, run `flask db upgrade` and then `flask run`.
+The development app generates an ephemeral key if none is set; sessions will not survive a restart until a stable value is configured. Never commit `.env` or production credentials.
+
+The default database is SQLite at `instance/blogsphere.db`. The repository already includes its Alembic migrations; apply them and start the development server:
+
+```powershell
+flask --app run.py db upgrade
+flask --app run.py run
+```
+
+On a fresh checkout, the migration creates the schema and starter categories and tags. Administrators can add or remove taxonomy in the Admin studio.
 
 Visit `http://127.0.0.1:5000`. The `/health` endpoint returns a simple application health response.
 
@@ -65,12 +87,12 @@ The command prompts for a username, email, and password and stores only a passwo
 | Variable | Purpose |
 | --- | --- |
 | `SECRET_KEY` | Session and CSRF signing key; required in production. |
-| `DATABASE_URL` | SQLAlchemy URL; defaults to a local SQLite database. |
+| `DATABASE_URL` | SQLAlchemy connection URL; defaults to a local SQLite database. |
 | `APP_ENV` | Configuration profile: `development`, `testing`, or `production`. |
 | `UPLOAD_FOLDER` | Directory for article image uploads. |
 | `POSTGRES_PASSWORD` | PostgreSQL password used by Docker Compose. |
 
-For PostgreSQL, use `postgresql+psycopg://user:password@host:5432/blogsphere`. URL-encode special characters in credentials.
+For PostgreSQL, use a SQLAlchemy URL such as `postgresql+psycopg://blogsphere:password@localhost:5432/blogsphere`. URL-encode special characters in credentials. In Docker Compose, the database hostname is `db`; Compose builds the connection URL from `POSTGRES_PASSWORD`.
 
 ## Features and routes
 
@@ -126,7 +148,7 @@ For Docker Compose, copy `.env.example` to `.env`, set a long random `SECRET_KEY
 docker compose up --build
 ```
 
-The app container selects the production configuration, applies committed Alembic migrations, and starts Gunicorn on port 8000. Persistent Docker volumes hold PostgreSQL data and uploaded images. For deployment, use HTTPS behind a trusted reverse proxy, protect environment variables, configure backups and monitoring, and review worker/resource sizing. See [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md).
+The app container selects the production configuration, applies committed Alembic migrations, and starts Gunicorn on port 8000. Persistent Docker volumes hold PostgreSQL data and uploaded images. Check `http://localhost:8000/health` after startup. For deployment, use HTTPS behind a trusted reverse proxy, protect environment variables, configure backups and monitoring, and review worker/resource sizing. See [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md).
 
 ## Project layout
 
@@ -144,7 +166,7 @@ run.py
 wsgi.py
 ```
 
-The full directory explanations, request flows, and model diagram are in [STRUCTURE_REPORT.md](./STRUCTURE_REPORT.md). Milestone coverage is summarized in [IMPLEMENTATION_REPORT.md](./IMPLEMENTATION_REPORT.md).
+The full directory explanations, request flows, and model diagram are in [STRUCTURE_REPORT.md](./STRUCTURE_REPORT.md). Milestone coverage is summarized in [IMPLEMENTATION_REPORT.md](./IMPLEMENTATION_REPORT.md), and the current test record is in [TESTING_REPORT.md](./TESTING_REPORT.md).
 
 ## Accessibility and external assets
 

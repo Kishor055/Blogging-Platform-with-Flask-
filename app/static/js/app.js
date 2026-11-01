@@ -35,6 +35,7 @@ window.initializeEditor = (initialHtml, uploadUrl, csrfToken) => {
   const uploadStatus = document.querySelector("#image-upload-status");
   if (!editorElement || !source || !window.Quill) return;
 
+  const toolbar = document.querySelector("#editor-toolbar");
   const editor = new Quill(editorElement, {
     theme: "snow",
     modules: {
@@ -50,6 +51,15 @@ window.initializeEditor = (initialHtml, uploadUrl, csrfToken) => {
     placeholder: "Start with a thought...",
   });
   if (initialHtml) editor.setContents(editor.clipboard.convert({ html: initialHtml }));
+  source.hidden = true;
+  source.removeAttribute("required");
+  source.removeAttribute("minlength");
+  editorElement.hidden = false;
+  editorElement.setAttribute("role", "textbox");
+  editorElement.setAttribute("aria-multiline", "true");
+  editorElement.setAttribute("aria-labelledby", "article-content-label");
+  toolbar.hidden = false;
+  document.querySelector("#article-content-label").removeAttribute("for");
   source.form.addEventListener("submit", () => {
     source.value = editor.root.innerHTML;
   });
